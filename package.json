@@ -1,0 +1,47 @@
+{
+  "name": "cabanas-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Suíte E2E do Projeto Cabanas (Kabins) — Playwright + BDD (Gherkin), Page Objects e Locators declarativos.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "bddgen": "bddgen",
+    "test": "bddgen && playwright test",
+    "test:smoke": "bddgen && playwright test --grep @smoke",
+    "test:critical": "bddgen && playwright test --grep @critical",
+    "test:regression": "bddgen && playwright test --grep @regression",
+    "test:headed": "bddgen && playwright test --headed --workers=1",
+    "test:ui": "bddgen && playwright test --ui",
+    "test:debug": "bddgen && cross-env PWDEBUG=1 playwright test --workers=1",
+    "test:module": "node scripts/run-module.mjs",
+    "test:ci": "bddgen && cross-env CI=true playwright test",
+    "report": "playwright show-report reports/playwright",
+    "steps:list": "bddgen export",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "architecture": "node scripts/check-architecture.mjs",
+    "quality": "npm run format:check && npm run lint && npm run typecheck && npm run architecture && bddgen",
+    "browsers:install": "playwright install --with-deps chromium"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^22.20.5",
+    "cross-env": "^10.1.0",
+    "dotenv": "^17.2.3",
+    "eslint": "^9.39.0",
+    "eslint-plugin-playwright": "^2.12.1",
+    "globals": "^16.5.0",
+    "playwright-bdd": "^9.2.1",
+    "prettier": "^3.9.10",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.1"
+  }
+}

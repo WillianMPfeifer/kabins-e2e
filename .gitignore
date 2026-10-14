@@ -1,0 +1,12 @@
+node_modules/
+.features-gen/
+reports/
+playwright-report/
+test-results/
+blob-report/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db

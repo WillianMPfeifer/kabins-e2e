@@ -1,0 +1,138 @@
+name: E2E
+
+# Repositório próprio (cabanas-e2e). A suíte roda contra um ambiente já
+# publicado — o alvo vem de variáveis/segredos do repositório ou de quem chamou.
+#
+#  - push / pull_request  → quality gate (lint, tipos, arquitetura, geração BDD)
+#                            + smoke contra o ambiente de staging, se configurado
+#  - schedule (noturno)    → regressão completa
+#  - workflow_dispatch     → execução manual escolhendo tags
+#  - repository_dispatch   → disparado pelo deploy do cabanas-web / cabanas-api
+#  - workflow_call         → reutilizável a partir dos outros repositórios
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * *' # 03:00 em Brasília
+  workflow_dispatch:
+    inputs:
+      grep:
+        description: 'Filtro de tags (ex.: @smoke, @critical, @reservas). Vazio = tudo.'
+        required: false
+        default: '@smoke'
+      base_url:
+        description: 'URL do front (sobrescreve vars.E2E_BASE_URL)'
+        required: false
+      api_url:
+        description: 'URL da API com /api/v1 (sobrescreve vars.E2E_API_URL)'
+        required: false
+  repository_dispatch:
+    types: [deploy-finished]
+  workflow_call:
+    inputs:
+      grep:
+        type: string
+        default: '@smoke'
+      base_url:
+        type: string
+        required: true
+      api_url:
+        type: string
+        required: true
+    secrets:
+      E2E_ADMIN_EMAIL:
+        required: true
+      E2E_ADMIN_PASSWORD:
+        required: true
+
+concurrency:
+  group: e2e-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run quality
+
+  e2e:
+    name: E2E (${{ matrix.shard }}/${{ strategy.job-total }})
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: 'true'
+      E2E_BASE_URL: ${{ inputs.base_url || github.event.client_payload.base_url || vars.E2E_BASE_URL }}
+      E2E_API_URL: ${{ inputs.api_url || github.event.client_payload.api_url || vars.E2E_API_URL }}
+      E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+      # Noturno roda tudo; os demais gatilhos rodam o filtro informado (padrão: smoke).
+      GREP: ${{ github.event_name == 'schedule' && '' || inputs.grep || github.event.client_payload.grep || '@smoke' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    steps:
+      - name: Ambiente-alvo configurado?
+        id: target
+        run: |
+          if [ -z "$E2E_BASE_URL" ] || [ -z "$E2E_API_URL" ]; then
+            echo "::notice::E2E_BASE_URL/E2E_API_URL não configurados — etapa E2E ignorada."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.target.outputs.ready == 'true'
+        with:
+          # Fixo para funcionar também via workflow_call (onde github.repository é o chamador).
+          repository: ${{ github.repository_owner }}/cabanas-e2e
+
+      - uses: actions/setup-node@v4
+        if: steps.target.outputs.ready == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - if: steps.target.outputs.ready == 'true'
+        run: npm ci
+
+      - name: Cache dos navegadores do Playwright
+        if: steps.target.outputs.ready == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - if: steps.target.outputs.ready == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Executar cenários
+        if: steps.target.outputs.ready == 'true'
+        run: |
+          npx bddgen
+          if [ -n "$GREP" ]; then
+            npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }} --grep "$GREP"
+          else
+            npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+          fi
+
+      - name: Publicar relatórios
+        if: always() && steps.target.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-reports-shard-${{ matrix.shard }}
+          path: reports/
+          retention-days: 14
