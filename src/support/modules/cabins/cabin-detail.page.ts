@@ -50,7 +50,11 @@ export class CabinDetailPage extends BasePage {
     await expect(this.el(L.reviewText(text)).first()).toBeVisible();
   }
 
+  async expectAt(slug: string): Promise<void> {
+    await this.expectPath(cabinDetailRoutes.bySlug(slug));
+  }
+
   async startBooking(): Promise<void> {
-    await this.el(L.bookNowLink).click();
+    await this.el(L.bookNowLink).or(this.el(L.bookNowButton)).click();
   }
 }

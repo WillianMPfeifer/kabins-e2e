@@ -14,7 +14,9 @@ export const cabinDetailLocators = {
   availabilitySection: { role: 'heading', name: 'Disponibilidade da Cabana' },
   reviewsSection: { role: 'heading', name: 'Quem já esteve aqui' },
   nightlyPrice: { text: '/ diária' },
+  /** Link para quem está conectado; botão que abre o login flutuante para visitantes. */
   bookNowLink: { role: 'link', name: /Reservar agora/ },
+  bookNowButton: { role: 'button', name: /Reservar agora/ },
   ratingSummary: (rating: string, count: number) => ({
     // Resumo da seção "Quem já esteve aqui": "4,0 · 1 avaliação" (o espaçamento varia no HTML).
     text: new RegExp(`^${escapeRegExp(rating)}\\s*·\\s*${count} ${count === 1 ? 'avaliação' : 'avaliações'}$`),

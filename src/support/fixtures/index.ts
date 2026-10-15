@@ -7,6 +7,7 @@ import { ScenarioContext } from '../core/scenario-context';
 import { TestDataFactory } from '../data/test-data.factory';
 import type { Persona } from '../data/test-data.types';
 import { AdminDashboardPage } from '../modules/admin/admin-dashboard.page';
+import { LoginModalComponent } from '../modules/auth/login-modal.page';
 import { LoginPage } from '../modules/auth/login.page';
 import { ProfilePage } from '../modules/auth/profile.page';
 import { SignupPage } from '../modules/auth/signup.page';
@@ -62,6 +63,7 @@ interface TestFixtures {
   publicApi: PublicApiProbe;
   canary: CanaryProbe;
   // Page Objects e Flows
+  loginModal: LoginModalComponent;
   loginPage: LoginPage;
   signupPage: SignupPage;
   profilePage: ProfilePage;
@@ -162,6 +164,7 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
   },
 
   loginPage: async ({ page }, use) => use(new LoginPage(page)),
+  loginModal: async ({ page }, use) => use(new LoginModalComponent(page)),
   signupPage: async ({ page }, use) => use(new SignupPage(page)),
   profilePage: async ({ page }, use) => use(new ProfilePage(page)),
   header: async ({ page }, use) => use(new HeaderComponent(page)),

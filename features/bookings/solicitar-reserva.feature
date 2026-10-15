@@ -54,9 +54,20 @@ Funcionalidade: Solicitação de reserva pelo hóspede
   Regra: Somente pessoas conectadas concluem a solicitação
 
     @regression @security
-    Cenário: Visitante sem login não consegue concluir a solicitação
+    Cenário: Visitante sem login recebe o login flutuante ao abrir o formulário
       Dado que existe uma cabana ativa com diária de R$ 300
       E que não estou conectado
-      Quando seleciono no calendário 2 noites com chegada daqui a 7 dias
+      Quando abro o formulário de reserva da cabana
+      Então vejo o login flutuante
+
+    @regression @security
+    Cenário: Visitante que fecha o login e tenta enviar precisa entrar, sem perder as datas
+      Dado que existe uma cabana ativa com diária de R$ 300
+      E que não estou conectado
+      Quando abro o formulário de reserva da cabana
+      E fecho o login flutuante
+      E seleciono no calendário 2 noites com chegada daqui a 7 dias
       E informo meus dados de contato e envio a solicitação
-      Então vejo o erro de reserva "Você precisa estar conectado para realizar uma reserva."
+      Então vejo o login flutuante
+      Quando entro pelo login flutuante como "hóspede"
+      Então o calendário indica 2 noites selecionadas

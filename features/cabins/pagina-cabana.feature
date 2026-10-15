@@ -17,9 +17,36 @@ Funcionalidade: Página pública da cabana
   @smoke
   Cenário: "Reservar agora" leva ao formulário de reserva
     Dado que existe uma cabana ativa com calendário aberto
+    E que estou conectado como "hóspede"
     Quando abro a página da cabana
     E clico em "Reservar agora"
     Então vejo o formulário de reserva da cabana
+
+  @smoke @critical
+  Esquema do Cenário: Visitante entra pelo login flutuante sem sair da cabana e segue para a reserva como <perfil>
+    Dado que existe uma cabana ativa com calendário aberto
+    E que não estou conectado
+    Quando abro a página da cabana
+    E clico em "Reservar agora"
+    Então vejo o login flutuante sem sair da página da cabana
+    Quando entro pelo login flutuante como "<perfil>"
+    Então vejo o formulário de reserva da cabana
+
+    Exemplos:
+      | perfil        |
+      | hóspede       |
+      | administrador |
+
+  @regression
+  Cenário: Anfitrião cadastrado pelo admin entra pelo login flutuante e completa o cadastro antes de reservar
+    # O admin cria o anfitrião sem CPF nem data de nascimento: a reserva exige os dois.
+    Dado que existe uma cabana ativa com calendário aberto
+    E que não estou conectado
+    Quando abro a página da cabana
+    E clico em "Reservar agora"
+    Então vejo o login flutuante sem sair da página da cabana
+    Quando entro pelo login flutuante como "anfitrião"
+    Então sou levado a completar o cadastro guardando a reserva da cabana
 
   @regression
   Cenário: Endereço de cabana inexistente mostra página não encontrada
